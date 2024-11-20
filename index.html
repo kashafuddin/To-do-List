@@ -1,0 +1,206 @@
+<!DOCTYPE html>  
+<html lang="en">  
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>To-Do List App</title>  
+     
+</head> 
+<style>
+    body {  
+    font-family: Arial, sans-serif;  
+    background-color: #f4f4f4;  
+    margin: 0;  
+    padding: 20px;  
+}  
+
+.container {  
+    max-width: 600px;  
+    margin: auto;  
+    background: white;  
+    padding: 20px;  
+    border-radius: 5px;  
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);  
+}  
+
+h1 {  
+    text-align: center;  
+}  
+
+form {  
+    display: flex;  
+    flex-direction: column;  
+}  
+
+input, textarea, select, button {  
+    margin: 10px 0;  
+}  
+
+button {  
+    background-color: #28a745;  
+    color: white;  
+    border: none;  
+    padding: 10px;  
+    cursor: pointer;  
+}  
+
+button:hover {  
+    background-color: #218838;  
+}  
+
+.task {  
+    padding: 10px;  
+    border: 1px solid #ddd;  
+    margin: 5px 0;  
+    border-radius: 5px;  
+}  
+
+.completed {  
+    text-decoration: line-through;  
+    background-color: #d4edda;  
+}
+</style> 
+<body>  
+    <div class="container">  
+        <h1>To-Do List</h1>  
+        <form id="task-form">  
+            <input type="text" id="title" placeholder="Task Title" required>  
+            <textarea id="description" placeholder="Task Description" required></textarea>  
+            <select id="priority" required>  
+                <option value="low">Low</option>  
+                <option value="medium">Medium</option>  
+                <option value="high">High</option>  
+            </select>  
+            <input type="text" id="category" placeholder="Category" required>  
+            <button type="submit">Add Task</button>  
+        </form>  
+        <div>  
+            <button id="show-all">Show All Tasks</button>  
+            <button id="show-completed">Show Completed Tasks</button>  
+            <button id="remove-completed">Remove Completed Tasks</button>  
+        </div>  
+        <div id="task-list"></div>  
+    </div>  
+    <script>
+ 
+ class Task {  
+    constructor(title, description, priority, category) {  
+        this.title = title;  
+        this.description = description;  
+        this.priority = priority;  
+        this.category = category;  
+        this.completed = false;   
+    }  
+
+    toggleStatus() {  
+        this.completed = !this.completed;  
+    }  
+
+    updatePriority(newPriority) {  
+        this.priority = newPriority;  
+    }  
+}  
+
+class ToDoList {  
+    constructor() {  
+        this.tasks = this.loadTasksFromLocalStorage();  
+    }  
+
+    addTask(title, description, priority, category) {  
+        const task = new Task(title, description, priority, category);  
+        this.tasks.push(task);  
+        this.saveTasksToLocalStorage();  
+    }  
+
+    saveTasksToLocalStorage() {  
+        localStorage.setItem('tasks', JSON.stringify(this.tasks));  
+    }  
+
+    loadTasksFromLocalStorage() {  
+        const tasksData = localStorage.getItem('tasks');  
+        return tasksData ? JSON.parse(tasksData) : [];  
+    }  
+
+    toggleTaskStatus(index) {  
+        this.tasks[index].toggleStatus();  
+        this.saveTasksToLocalStorage();  
+    }  
+
+    updateTaskPriority(index, newPriority) {  
+        this.tasks[index].updatePriority(newPriority);  
+        this.saveTasksToLocalStorage();  
+    }  
+
+    removeCompletedTasks() {  
+        this.tasks = this.tasks.filter(task => !task.completed);  
+        this.saveTasksToLocalStorage();  
+    }  
+
+    displayTasks(containerId, filterFunction) {  
+        const taskList = document.getElementById(containerId);  
+        taskList.innerHTML = ''; // Clear the container  
+        const tasksToDisplay = this.tasks.filter(filterFunction);  
+
+        tasksToDisplay.forEach((task, index) => {  
+            const taskDiv = document.createElement('div');  
+            taskDiv.className = `task${task.completed ? ' completed' : ''}`;  
+            taskDiv.innerHTML = `  
+                <h3>${task.title} (${task.priority})</h3>  
+                <p>${task.description}</p>  
+                <p>Category: ${task.category}</p>  
+                <button onclick="toggleTaskStatus(${index})">${task.completed ? 'Mark as Pending' : 'Mark as Completed'}</button>  
+                <button onclick="removeTask(${index})">Remove</button>  
+            `;  
+            taskList.appendChild(taskDiv);  
+        });  
+    }  
+}  
+
+  
+const toDoList = new ToDoList();  
+
+  
+document.getElementById('task-form').addEventListener('submit', function (e) {  
+    e.preventDefault();  
+    const title = e.target.title.value;  
+    const description = e.target.description.value;  
+    const priority = e.target.priority.value;  
+    const category = e.target.category.value;  
+
+    toDoList.addTask(title, description, priority, category);  
+    toDoList.displayTasks('task-list', () => true);  
+    e.target.reset(); // Reset the form  
+});  
+
+  
+window.onload = function () {  
+    toDoList.displayTasks('task-list', () => true);  
+};  
+
+document.getElementById('show-all').addEventListener('click', () => {  
+    toDoList.displayTasks('task-list', () => true);  
+});  
+
+document.getElementById('show-completed').addEventListener('click', () => {  
+    toDoList.displayTasks('task-list', task => task.completed);  
+});  
+
+document.getElementById('remove-completed').addEventListener('click', () => {  
+    toDoList.removeCompletedTasks();  
+    toDoList.displayTasks('task-list', () => true);  
+});  
+
+ 
+function toggleTaskStatus(index) {  
+    toDoList.toggleTaskStatus(index);  
+    toDoList.displayTasks('task-list', () => true);  
+}  
+
+function removeTask(index) {  
+    toDoList.tasks.splice(index, 1);  
+    toDoList.saveTasksToLocalStorage();  
+    toDoList.displayTasks('task-list', () => true);  
+}
+    </script>  
+</body>  
+</html>
